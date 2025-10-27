@@ -10,16 +10,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def NWS_API_BASE "https://api.weather.gov")
 (def USER_AGENT "weather-app/1.0")
+(def nws-headers {"User-Agent" USER_AGENT
+                  "Accept" "application/geo+json"})
 
 (defn get-nws
   [url]
   (client/get url
-              {:headers {"User-Agent" USER_AGENT
-                         "Accept" "application/geo+json"}}))
+              {:headers nws-headers}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Processing API responses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn forecast->str
+  [forecast]
+  (str
+   (get forecast "name") "\n"
+   "Temperature: " (get forecast "temperature") (get forecast "temperatureUnit") "\n"
+   "Wind: " (get forecast "windSpeed") "\n"
+   "Forecast: " (get forecast "detailedForecast")))
+
 (defn feature->alert
   [feature]
   (let [properties (get feature "properties")]
@@ -38,13 +47,18 @@
                      (get "features"))]
     (map feature->alert features)))
 
-(defn get-temperature
+(defn get-forecast
   [lat lon]
-  (let [url (str NWS_API_BASE "/points/" lat "/" lon)
-        resp (get-nws url)
-        features (-> (:body resp)
-                     (json/read-str))]
-    features))
+  (let [url (str NWS_API_BASE "/points/" lat "," lon)
+        forecast-url (-> (get-nws url)
+                         (:body)
+                         (json/read-str)
+                         (get-in ["properties" "forecast"]))
+        forecast-periods (-> (client/get forecast-url {:headers nws-headers})
+                             (:body)
+                             (json/read-str)
+                             (get-in ["properties" "periods"]))]
+    (map forecast->str (take 5 forecast-periods))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MCP
@@ -73,19 +87,12 @@
                          "longitude" {"type" "number"
                                       "description" "Longitude of the location"}}
            "required" ["latitude" "longitude"]}
-  :tool-fn (fn [_req {:keys [state]}]
-             (let [alerts (get-alerts state)]
+  :tool-fn (fn [_req {:keys [latitude longitude]}]
+             (let [forecast (get-forecast latitude longitude)]
                {:content [{:type :text
-                           :text (str/join "\n" (vec alerts))}]
+                           :text (str/join "\n" (vec forecast))}]
                 :isError false}))})
 
 
 ;; Start MCP
 (mcp/run-http! {:port 3999})
-
-(comment
-  (clojure.string/join "\n" (get-alerts "VA"))
-
-  (get-temperature 37.5407 77.4360 )
-  
-  )
