@@ -1,10 +1,10 @@
 (ns co.gaiwan.mcp.http-api
   (:require
-   [charred.api :as charred]
    [co.gaiwan.mcp.json-rpc :as json-rpc]
    [co.gaiwan.mcp.protocol :as mcp]
    [co.gaiwan.mcp.state :as state]
-   [lambdaisland.log4j2 :as log])
+   [clojure.tools.logging :as log]
+   [cheshire.core :as json])
   (:import
    (java.util.concurrent BlockingQueue)))
 
@@ -14,7 +14,7 @@
     (let [emit (fn [response]
                  (log/debug :sse/emit (update response :data select-keys [:id :method #_:result]))
                  (emit
-                  (merge {:event "message"} (update response :data charred/write-json-str))))
+                  (merge {:event "message"} (update response :data json/generate-string))))
           close (fn []
                   (log/debug :sse/close conn-id)
                   (swap! state/state update-in [:sessions session-id :connections] dissoc conn-id)
@@ -100,7 +100,7 @@
                (log/debug :get/emitting response)
                (emit
                 (merge {:event "message"}
-                       (update response :data charred/write-json-str)))
+                       (update response :data json/generate-string)))
                (recur (.take ^BlockingQueue queue)))
              (catch Throwable t
                (log/error :get-stream/broke {} :exception t))
@@ -111,4 +111,5 @@
                     :message "GET request must accept text/event-stream"}}}))
 
 (defn routes []
-  [["/mcp" {:get #'GET :post #'POST}]])
+  #{(ruuter/get "/mcp" [] #'GET)
+    (ruuter/post "/mcp" [] #'POST)})

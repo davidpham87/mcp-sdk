@@ -3,7 +3,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [lambdaisland.log4j2 :as log]
+   [clojure.tools.logging :as log]
    [nrepl.transport :as transport])
   (:import
    (java.net Socket)))
