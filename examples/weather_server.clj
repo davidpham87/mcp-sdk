@@ -1,9 +1,9 @@
 (ns weather-server
   (:require [co.gaiwan.mcp :as mcp]
             [co.gaiwan.mcp.state :as state]
-            [clojure.data.json :as json]
+            [cheshire.core :as json]
             [clojure.string :as str]
-            [clj-http.client :as client]))
+            [org.httpkit.client :as http]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP Requests
@@ -15,8 +15,8 @@
 
 (defn get-nws
   [url]
-  (client/get url
-              {:headers nws-headers}))
+  @(http/get url
+             {:headers nws-headers}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Processing API responses
@@ -43,7 +43,7 @@
   (let [url (str NWS_API_BASE "/alerts/active/area/" state-str)
         resp (get-nws url)
         features (-> (:body resp)
-                     (json/read-str)
+                     (json/parse-string true)
                      (get "features"))]
     (map feature->alert features)))
 
@@ -52,11 +52,11 @@
   (let [url (str NWS_API_BASE "/points/" lat "," lon)
         forecast-url (-> (get-nws url)
                          (:body)
-                         (json/read-str)
+                         (json/parse-string true)
                          (get-in ["properties" "forecast"]))
-        forecast-periods (-> (client/get forecast-url {:headers nws-headers})
+        forecast-periods (-> @(http/get forecast-url {:headers nws-headers})
                              (:body)
-                             (json/read-str)
+                             (json/parse-string true)
                              (get-in ["properties" "periods"]))]
     (map forecast->str (take 5 forecast-periods))))
 

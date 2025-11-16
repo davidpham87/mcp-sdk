@@ -3,7 +3,7 @@
    [charred.api :as charred]
    [co.gaiwan.mcp.protocol :as mcp]
    [co.gaiwan.mcp.state :as state]
-   [lambdaisland.log4j2 :as log]))
+   [clojure.tools.logging :as log]))
 
 (defn start! []
   (swap! state/state assoc-in [:sessions :stdio :connections :default]

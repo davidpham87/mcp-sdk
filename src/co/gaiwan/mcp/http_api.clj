@@ -4,7 +4,7 @@
    [co.gaiwan.mcp.json-rpc :as json-rpc]
    [co.gaiwan.mcp.protocol :as mcp]
    [co.gaiwan.mcp.state :as state]
-   [lambdaisland.log4j2 :as log])
+   [clojure.tools.logging :as log])
   (:import
    (java.util.concurrent BlockingQueue)))
 
