@@ -4,7 +4,8 @@
    [co.gaiwan.mcp.protocol :as mcp]
    [co.gaiwan.mcp.state :as state]
    [clojure.tools.logging :as log]
-   [cheshire.core :as json])
+   [cheshire.core :as json]
+   [ruuter.core :as ruuter])
   (:import
    (java.util.concurrent BlockingQueue)))
 
@@ -22,15 +23,6 @@
       (swap! state/state assoc-in [:sessions session-id :connections conn-id] {:emit emit :close close}))))
 
 (defn POST
-  {:parameters
-   {:body [:map {:closed false}
-           [:jsonrpc [:enum "2.0"]]
-           [:method {:optional true} string?]
-           [:id {:optional true} any?]
-           [:response {:optional true} [:map {:closed false}]]
-           [:params {:optional true} [:or
-                                      [:map {:closed false}]
-                                      [:vector any?]]]]}}
   [{:keys [parameters mcp-session-id] :as req}]
   (log/info :POST (-> req :parameters :body))
   (let [{:keys [method params result id] :as rpc-req} (:body parameters)]
