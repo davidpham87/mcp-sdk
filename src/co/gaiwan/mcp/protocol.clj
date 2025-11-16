@@ -1,7 +1,7 @@
 (ns co.gaiwan.mcp.protocol
   (:require
    [co.gaiwan.mcp.json-rpc :as jsonrpc]
-   [lambdaisland.log4j2 :as log])
+   [clojure.tools.logging :as log])
   (:import
    java.util.concurrent.LinkedBlockingQueue))
 
